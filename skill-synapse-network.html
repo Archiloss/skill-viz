@@ -52,6 +52,12 @@
   /* 加载淡入 */
   #container { opacity:0; transition:opacity 1.2s ease; }
   #container.ready { opacity:1; }
+  /* 平滑过渡:高亮/变暗/脉动不瞬变 */
+  #container svg circle, #container svg path, #container svg text {
+    transition: opacity .18s ease, stroke-opacity .18s ease, fill-opacity .18s ease;
+  }
+  /* 星点不参与过渡(避免动画干扰) */
+  #container svg g:nth-child(1) circle { transition: none; }
 </style>
 </head>
 <body>
@@ -129,14 +135,8 @@ function isHub(d) { return hubLevel(d) === '中枢'; }
 const svg = d3.select('#container').append('svg')
   .attr('width', width).attr('height', height);
 
-// ---- 滤镜:霓虹发光 ----
+// ---- 无 SVG 滤镜:光晕用多圈半透明层模拟(高斯模糊在拖动时每帧全量重算,是卡顿主因) ----
 const defs = svg.append('defs');
-const glow = defs.append('filter').attr('id', 'glow').attr('x', '-80%').attr('y', '-80%').attr('width', '260%').attr('height', '260%');
-glow.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
-glow.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).join('feMergeNode').attr('in', d => d);
-const glowStrong = defs.append('filter').attr('id', 'glowStrong').attr('x', '-120%').attr('y', '-120%').attr('width', '340%').attr('height', '340%');
-glowStrong.append('feGaussianBlur').attr('stdDeviation', '7').attr('result', 'blur');
-glowStrong.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).join('feMergeNode').attr('in', d => d);
 
 // ---- 背景星点 ----
 const starG = svg.append('g');
@@ -159,8 +159,9 @@ nodes.forEach(n => {
   n.cat = catColors[n.category] || '#64748b';
 });
 
-// 力导向
+// 力导向(velocityDecay 略高→收敛更柔和)
 const sim = d3.forceSimulation(nodes)
+  .velocityDecay(0.42)
   .force('link', d3.forceLink(links).id(d => d.id).distance(l => l.source.r + l.target.r + 60))
   .force('charge', d3.forceManyBody().strength(d => -80 - d.refs * 3))
   .force('center', d3.forceCenter(width / 2, height / 2))
@@ -197,23 +198,27 @@ const link = g.append('g').selectAll('path').data(links).join('path')
   .attr('stroke-width', 1)
   .attr('stroke-opacity', 0.45);
 
-// 节点外圈光晕
+// 节点外圈光晕(两圈半透明描边模拟辉光,零滤镜开销)
+const haloOuter = g.append('g').selectAll('circle').data(nodes).join('circle')
+  .attr('r', d => d.r + 12)
+  .attr('fill', 'none')
+  .attr('stroke', d => d.cat)
+  .attr('stroke-opacity', 0.08)
+  .attr('stroke-width', 4);
 const halos = g.append('g').selectAll('circle').data(nodes).join('circle')
   .attr('r', d => d.r + 5)
   .attr('fill', 'none')
   .attr('stroke', d => d.cat)
-  .attr('stroke-opacity', 0.3)
-  .attr('stroke-width', 2)
-  .attr('filter', 'url(#glow)');
+  .attr('stroke-opacity', 0.25)
+  .attr('stroke-width', 2);
 
-// 节点本体(霓虹)
+// 节点本体(霓虹,无滤镜)
 const node = g.append('g').selectAll('circle').data(nodes).join('circle')
   .attr('r', d => d.r)
   .attr('fill', d => d.cat)
   .attr('fill-opacity', 0.22)
   .attr('stroke', d => d.cat)
   .attr('stroke-width', 2)
-  .attr('filter', 'url(#glowStrong)')
   .style('cursor', 'pointer')
   .call(d3.drag()
     .on('start', dragstarted)
@@ -266,21 +271,23 @@ function neighborsOf(id) {
 }
 node.on('mouseenter', (e, d) => {
   const s = neighborsOf(d.id);
-  node.attr('opacity', n => s.has(n.id) ? 1 : 0.12);
-  labels.attr('opacity', n => s.has(n.id) ? 1 : 0.1);
-  link.attr('stroke-opacity', l => {
+  node.style('opacity', n => s.has(n.id) ? 1 : 0.12);
+  labels.style('opacity', n => s.has(n.id) ? 1 : 0.1);
+  link.style('stroke-opacity', l => {
     const a = l.source.id || l.source, b = l.target.id || l.target;
     return (s.has(a) && s.has(b)) ? 0.8 : 0.04;
   });
-  halos.attr('opacity', n => s.has(n.id) ? 1 : 0.08);
-  pulses.attr('opacity', n => s.has(n.id) ? 1 : 0.05);
+  haloOuter.style('opacity', n => s.has(n.id) ? 1 : 0.08);
+  halos.style('opacity', n => s.has(n.id) ? 1 : 0.08);
+  pulses.style('opacity', n => s.has(n.id) ? 1 : 0.05);
 });
 node.on('mouseleave', () => {
-  node.attr('opacity', 1);
-  labels.attr('opacity', 1);
-  link.attr('stroke-opacity', 0.45);
-  halos.attr('opacity', 1);
-  pulses.attr('opacity', 1);
+  node.style('opacity', 1);
+  labels.style('opacity', 1);
+  link.style('stroke-opacity', 0.45);
+  haloOuter.style('opacity', 1);
+  halos.style('opacity', 1);
+  pulses.style('opacity', 1);
 });
 
 // 双击聚焦
@@ -292,8 +299,20 @@ node.on('dblclick', (e, d) => {
   );
 });
 
+// 上次渲染位置(节流用)
+const lastRender = new Map();
 sim.on('tick', () => {
+  // 节流:所有节点位移<0.3px 时跳过重绘(布局静止后零开销)
+  let moved = 0;
+  nodes.forEach(n => {
+    const p = lastRender.get(n.id);
+    moved = Math.max(moved, p ? Math.hypot(n.x - p[0], n.y - p[1]) : 1);
+  });
+  if (moved < 0.3 && lastRender.size === nodes.length) return;
+  lastRender.clear();
+  nodes.forEach(n => lastRender.set(n.id, [n.x, n.y]));
   link.attr('d', curvePath);
+  haloOuter.attr('cx', d => d.x).attr('cy', d => d.y);
   halos.attr('cx', d => d.x).attr('cy', d => d.y);
   node.attr('cx', d => d.x).attr('cy', d => d.y);
   pulses.attr('cx', d => d.x).attr('cy', d => d.y);
@@ -306,7 +325,7 @@ sim.on('tick', () => {
 setTimeout(() => d3.select('#container').classed('ready', true), 50);
 
 function dragstarted(e, d) {
-  if (!e.active) sim.alphaTarget(0.3).restart();
+  if (!e.active) sim.alphaTarget(0.12).restart();  // 低目标值:拖动时其他节点轻微让位,不全局乱晃
   d.fx = d.x; d.fy = d.y;
 }
 function dragged(e, d) { d.fx = e.x; d.fy = e.y; }
