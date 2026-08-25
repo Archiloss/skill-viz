@@ -2,34 +2,41 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Skill 神经突触网络</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#020617; font-family:'JetBrains Mono', 'PingFang SC', monospace; overflow:hidden; }
+  body {
+    background: radial-gradient(ellipse 80% 60% at 50% 45%, #0b1220 0%, #020617 75%);
+    font-family:'JetBrains Mono','PingFang SC',monospace;
+    overflow:hidden;
+  }
   #container { width:100vw; height:100vh; }
   /* 图例 */
   #legend {
     position:fixed; top:16px; left:16px; z-index:10;
-    background:rgba(2,6,23,0.85); border:1px solid #1e293b; border-radius:10px;
-    padding:12px 16px; color:#94a3b8; font-size:11px; line-height:1.7;
-    backdrop-filter:blur(4px); max-width:260px;
+    background:rgba(2,6,23,0.75); border:1px solid #1e293b; border-radius:12px;
+    padding:12px 16px; color:#94a3b8; font-size:11px; line-height:1.8;
+    backdrop-filter:blur(8px); max-width:270px;
+    box-shadow:0 4px 24px rgba(0,0,0,.4);
   }
-  #legend h3 { color:#e2e8f0; font-size:12px; margin-bottom:6px; }
+  #legend h3 { color:#e2e8f0; font-size:12px; margin-bottom:6px; letter-spacing:.5px; }
   #legend .item { display:flex; align-items:center; gap:8px; }
   #legend .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
   #legend .line { width:24px; height:2px; border-radius:1px; flex-shrink:0; }
+  #legend .hint { margin-top:6px; color:#475569; font-size:10px; }
   /* 标题 */
   #title {
     position:fixed; top:16px; right:24px; z-index:10;
-    color:#e2e8f0; font-size:13px; text-align:right;
+    color:#e2e8f0; font-size:14px; text-align:right; letter-spacing:.5px;
   }
-  #title .sub { color:#64748b; font-size:10px; margin-top:2px; }
+  #title .sub { color:#64748b; font-size:10px; margin-top:3px; }
   /* 提示框 */
   #tooltip {
     position:fixed; display:none; z-index:20; pointer-events:none;
-    background:rgba(15,23,42,0.95); border:1px solid #334155; border-radius:8px;
+    background:rgba(15,23,42,0.92); border:1px solid #334155; border-radius:10px;
     padding:10px 14px; color:#cbd5e1; font-size:11px; max-width:280px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    box-shadow:0 8px 32px rgba(0,0,0,.6); backdrop-filter:blur(6px);
   }
   #tooltip .name { color:#f1f5f9; font-weight:bold; font-size:12px; margin-bottom:4px; }
   #tooltip .row { display:flex; justify-content:space-between; gap:16px; margin:2px 0; }
@@ -37,17 +44,20 @@
   svg text { user-select:none; }
   /* 脉冲动画（默认关闭，点按钮开启） */
   @keyframes pulse {
-    0% { r: var(--r); opacity:0.6; }
-    100% { r: calc(var(--r) + 10px); opacity:0; }
+    0%   { r: var(--r); opacity:.7; }
+    100% { r: calc(var(--r) + 14px); opacity:0; }
   }
   .pulse-ring { fill:none; stroke-width:1.5; }
-  .pulse-ring.on { animation: pulse 3s ease-out infinite; }
+  .pulse-ring.on { animation: pulse 3.2s ease-out infinite; }
+  /* 加载淡入 */
+  #container { opacity:0; transition:opacity 1.2s ease; }
+  #container.ready { opacity:1; }
 </style>
 </head>
 <body>
 <div id="title">
   Skill 神经突触网络
-  <div class="sub">57 神经元 · 37 突触连接 · 中枢-外围互联结构</div>
+  <div class="sub">57 神经元 · 101 突触连接 · 8 中枢 / 8 专项</div>
 </div>
 <div id="legend">
   <a href="index.html" style="display:inline-block; margin-bottom:8px; background:rgba(34,211,238,0.12); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; text-decoration:none;">← 返回目录</a>
@@ -61,7 +71,7 @@
   <div class="item"><div class="dot" style="background:#475569"></div> 末梢神经元（refs &lt; 5）</div>
   <div class="item"><div class="line" style="background:#64748b"></div> 突触连接（引用/路由）</div>
   <div class="item"><div class="dot" style="background:#a78bfa"></div> 高频强化（脉动）</div>
-  <div style="margin-top:6px;color:#64748b">拖拽节点 · 滚轮缩放 · 悬停查看</div>
+  <div class="hint">拖动节点固定位置 · 滚轮缩放 · 双击聚焦 · 悬停高亮邻接</div>
 </div>
 <div id="tooltip"></div>
 <div id="container"></div>
@@ -84,9 +94,28 @@ const width = window.innerWidth, height = window.innerHeight;
 const svg = d3.select('#container').append('svg')
   .attr('width', width).attr('height', height);
 
+// ---- 滤镜:霓虹发光 ----
+const defs = svg.append('defs');
+const glow = defs.append('filter').attr('id', 'glow').attr('x', '-80%').attr('y', '-80%').attr('width', '260%').attr('height', '260%');
+glow.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+glow.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).join('feMergeNode').attr('in', d => d);
+const glowStrong = defs.append('filter').attr('id', 'glowStrong').attr('x', '-120%').attr('y', '-120%').attr('width', '340%').attr('height', '340%');
+glowStrong.append('feGaussianBlur').attr('stdDeviation', '7').attr('result', 'blur');
+glowStrong.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).join('feMergeNode').attr('in', d => d);
+
+// ---- 背景星点 ----
+const starG = svg.append('g');
+const stars = d3.range(140).map(() => ({
+  x: Math.random()*width, y: Math.random()*height,
+  r: Math.random()*1.1 + .3, o: Math.random()*.5 + .15
+}));
+starG.selectAll('circle').data(stars).join('circle')
+  .attr('cx', d => d.x).attr('cy', d => d.y)
+  .attr('r', d => d.r).attr('fill', '#e2e8f0').attr('opacity', d => d.o);
+
 // 缩放
 const g = svg.append('g');
-svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', (e) => g.attr('transform', e.transform)));
+svg.call(d3.zoom().scaleExtent([0.15, 5]).on('zoom', (e) => g.attr('transform', e.transform)));
 
 // 节点 radius 按 refs 数（对数缩放）
 const rScale = d3.scaleSqrt().domain([0, 120]).range([5, 30]);
@@ -100,44 +129,54 @@ const sim = d3.forceSimulation(nodes)
   .force('link', d3.forceLink(links).id(d => d.id).distance(l => l.source.r + l.target.r + 60))
   .force('charge', d3.forceManyBody().strength(d => -80 - d.refs * 3))
   .force('center', d3.forceCenter(width / 2, height / 2))
-  .force('collide', d3.forceCollide().radius(d => d.r + 14));
+  .force('collide', d3.forceCollide().radius(d => d.r + 16));
 
-// 中枢锚定（refs >= 15 放中间附近）
-sim.force('x', d3.forceX(d => d.refs >= 15 ? width/2 + (Math.random()-0.5)*100 : width/2).strength(0.05));
-sim.force('y', d3.forceY(d => d.refs >= 15 ? height/2 + (Math.random()-0.5)*80 : height/2).strength(0.05));
+// 中枢锚定
+sim.force('x', d3.forceX(d => d.refs >= 15 ? width/2 + (Math.random()-0.5)*120 : width/2).strength(0.05));
+sim.force('y', d3.forceY(d => d.refs >= 15 ? height/2 + (Math.random()-0.5)*100 : height/2).strength(0.05));
 
-// 边（突触线）
-const link = g.append('g').selectAll('line').data(links).join('line')
+// 贝塞尔控制点(神经纤维弯曲)
+function curvePath(d) {
+  const x1 = d.source.x, y1 = d.source.y, x2 = d.target.x, y2 = d.target.y;
+  const dx = x2 - x1, dy = y2 - y1;
+  const dist = Math.max(1, Math.hypot(dx, dy));
+  // 垂直于连线偏移,偏移量随距离增大而增大
+  const bend = Math.min(60, dist * 0.18);
+  const mx = (x1 + x2) / 2 - (dy / dist) * bend;
+  const my = (y1 + y2) / 2 + (dx / dist) * bend;
+  return `M ${x1},${y1} Q ${mx},${my} ${x2},${y2}`;
+}
+// 边（神经纤维）
+const link = g.append('g').selectAll('path').data(links).join('path')
+  .attr('fill', 'none')
   .attr('stroke', '#475569')
   .attr('stroke-width', 1)
-  .attr('stroke-opacity', 0.5);
-
-// 边末梢发光点（像突触小泡）
-const synapsis = g.append('g').selectAll('circle').data(links).join('circle')
-  .attr('r', 2.5).attr('fill', '#94a3b8').attr('fill-opacity', 0.8);
+  .attr('stroke-opacity', 0.45);
 
 // 节点外圈光晕
 const halos = g.append('g').selectAll('circle').data(nodes).join('circle')
-  .attr('r', d => d.r + 4)
+  .attr('r', d => d.r + 5)
   .attr('fill', 'none')
   .attr('stroke', d => d.cat)
-  .attr('stroke-opacity', 0.25)
-  .attr('stroke-width', 2);
+  .attr('stroke-opacity', 0.3)
+  .attr('stroke-width', 2)
+  .attr('filter', 'url(#glow)');
 
-// 节点本体
+// 节点本体(霓虹)
 const node = g.append('g').selectAll('circle').data(nodes).join('circle')
   .attr('r', d => d.r)
   .attr('fill', d => d.cat)
-  .attr('fill-opacity', 0.25)
+  .attr('fill-opacity', 0.22)
   .attr('stroke', d => d.cat)
   .attr('stroke-width', 2)
+  .attr('filter', 'url(#glowStrong)')
   .style('cursor', 'pointer')
   .call(d3.drag()
     .on('start', dragstarted)
     .on('drag', dragged)
     .on('end', dragended));
 
-// 高频强化脉动环（refs >= 15 的中枢）
+// 高频强化脉动环
 const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => d.refs >= 10)).join('circle')
   .attr('class', 'pulse-ring')
   .attr('stroke', d => d.cat)
@@ -146,11 +185,13 @@ const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => d.refs >
 
 // 标签
 const labels = g.append('g').selectAll('text').data(nodes).join('text')
-  .attr('dy', d => d.r + 14)
+  .attr('dy', d => d.r + 15)
   .attr('text-anchor', 'middle')
   .attr('font-size', d => d.refs >= 15 ? 12 : 10)
   .attr('font-weight', d => d.refs >= 15 ? 'bold' : 'normal')
   .attr('fill', d => d.refs >= 15 ? '#f1f5f9' : '#94a3b8')
+  .attr('paint-order', 'stroke')
+  .attr('stroke', '#020617').attr('stroke-width', 3).attr('stroke-opacity', 0.6)
   .text(d => d.id.length > 24 ? d.id.slice(0, 22) + '…' : d.id);
 
 // 工具提示
@@ -169,6 +210,34 @@ node.on('mouseover', (e, d) => {
   })
   .on('mouseout', () => tooltip.style('display', 'none'));
 
+// 悬停高亮邻接子图
+function neighborsOf(id) {
+  const s = new Set([id]);
+  links.forEach(l => {
+    if (l.source === id || (l.source && l.source.id === id)) s.add(l.target && l.target.id ? l.target.id : l.target);
+    if (l.target === id || (l.target && l.target.id === id)) s.add(l.source && l.source.id ? l.source.id : l.source);
+  });
+  return s;
+}
+node.on('mouseenter', (e, d) => {
+  const s = neighborsOf(d.id);
+  node.attr('opacity', n => s.has(n.id) ? 1 : 0.12);
+  labels.attr('opacity', n => s.has(n.id) ? 1 : 0.1);
+  link.attr('stroke-opacity', l => {
+    const a = l.source.id || l.source, b = l.target.id || l.target;
+    return (s.has(a) && s.has(b)) ? 0.8 : 0.04;
+  });
+  halos.attr('opacity', n => s.has(n.id) ? 1 : 0.08);
+  pulses.attr('opacity', n => s.has(n.id) ? 1 : 0.05);
+});
+node.on('mouseleave', () => {
+  node.attr('opacity', 1);
+  labels.attr('opacity', 1);
+  link.attr('stroke-opacity', 0.45);
+  halos.attr('opacity', 1);
+  pulses.attr('opacity', 1);
+});
+
 // 双击聚焦
 node.on('dblclick', (e, d) => {
   const k = 1.5;
@@ -179,15 +248,17 @@ node.on('dblclick', (e, d) => {
 });
 
 sim.on('tick', () => {
-  link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-  synapsis.attr('cx', d => (d.source.x + d.target.x)/2)
-           .attr('cy', d => (d.source.y + d.target.y)/2);
+  link.attr('d', curvePath);
   halos.attr('cx', d => d.x).attr('cy', d => d.y);
   node.attr('cx', d => d.x).attr('cy', d => d.y);
   pulses.attr('cx', d => d.x).attr('cy', d => d.y);
   labels.attr('x', d => d.x).attr('y', d => d.y);
 });
+
+// 信号粒子动画已移除（性能原因）
+
+// 加载淡入
+setTimeout(() => d3.select('#container').classed('ready', true), 50);
 
 function dragstarted(e, d) {
   if (!e.active) sim.alphaTarget(0.3).restart();
@@ -196,7 +267,7 @@ function dragstarted(e, d) {
 function dragged(e, d) { d.fx = e.x; d.fy = e.y; }
 function dragended(e, d) {
   if (!e.active) sim.alphaTarget(0);
-  // 松手后固定在该位置，不释放 fx/fy → 拖完停住不弹回
+  // 拖完固定在新位置,不被力模拟弹回
   d.fx = d.x; d.fy = d.y;
 }
 
