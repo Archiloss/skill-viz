@@ -131,9 +131,18 @@ const sim = d3.forceSimulation(nodes)
   .force('center', d3.forceCenter(width / 2, height / 2))
   .force('collide', d3.forceCollide().radius(d => d.r + 16));
 
-// 中枢锚定
-sim.force('x', d3.forceX(d => d.refs >= 15 ? width/2 + (Math.random()-0.5)*120 : width/2).strength(0.05));
-sim.force('y', d3.forceY(d => d.refs >= 15 ? height/2 + (Math.random()-0.5)*100 : height/2).strength(0.05));
+// 同域聚团：每个域一个目标区域（圆形布局），同域节点被吸引到同一块
+const catTargets = {};
+const cats = [...new Set(nodes.map(n => n.category))];
+const nCats = cats.length;
+const R = Math.min(width, height) * 0.38;
+cats.forEach((c, i) => {
+  const ang = (i / nCats) * 2 * Math.PI - Math.PI / 2;
+  catTargets[c] = { x: width / 2 + R * Math.cos(ang), y: height / 2 + R * Math.sin(ang) };
+});
+// 中枢（refs>=15）仍锚定中心
+sim.force('x', d3.forceX(d => d.refs >= 15 ? width/2 + (Math.random()-0.5)*120 : catTargets[d.category].x).strength(d => d.refs >= 15 ? 0.08 : 0.12));
+sim.force('y', d3.forceY(d => d.refs >= 15 ? height/2 + (Math.random()-0.5)*100 : catTargets[d.category].y).strength(d => d.refs >= 15 ? 0.08 : 0.12));
 
 // 贝塞尔控制点(神经纤维弯曲)
 function curvePath(d) {
