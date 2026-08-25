@@ -25,6 +25,10 @@
   #legend .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
   #legend .line { width:24px; height:2px; border-radius:1px; flex-shrink:0; }
   #legend .hint { margin-top:6px; color:#475569; font-size:10px; }
+  /* 域色表可点击开关 */
+  #legend .cat-toggle { cursor:pointer; padding:1px 5px; margin:-1px -5px; border-radius:4px; user-select:none; }
+  #legend .cat-toggle:hover { background:rgba(255,255,255,.1); }
+  #legend .cat-off { opacity:.28; text-decoration:line-through; }
   /* 标题 */
   #title {
     position:fixed; top:16px; right:24px; z-index:10;
@@ -44,11 +48,11 @@
   svg text { user-select:none; }
   /* 脉冲动画（默认关闭，点按钮开启） */
   @keyframes pulse {
-    0%   { r: var(--r); opacity:.7; }
-    100% { r: calc(var(--r) + 14px); opacity:0; }
+    0%   { r: var(--r); opacity:.85; stroke-width:2.5; }
+    100% { r: calc(var(--r) + 40px); opacity:0; stroke-width:.5; }
   }
   .pulse-ring { fill:none; stroke-width:1.5; }
-  .pulse-ring.on { animation: pulse 3.2s ease-out infinite; }
+  .pulse-ring.on { animation: pulse 2.2s ease-out infinite; }
   /* 加载淡入 */
   #container { opacity:0; transition:opacity 1.2s ease; }
   #container.ready { opacity:1; }
@@ -63,36 +67,28 @@
 <body>
 <div id="title">
   Skill 神经突触网络
-  <div class="sub">57 神经元 · 101 突触连接 · 9 中枢 / 10 专项</div>
+  <div class="sub">57 节点 · 101 突触连接 · 9 核心 / 48 其他</div>
 </div>
 <div id="legend">
   <a href="index.html" style="display:inline-block; margin-bottom:8px; background:rgba(34,211,238,0.12); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; text-decoration:none;">← 返回目录</a>
   <div style="margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap;">
     <button id="resetBtn" style="background:rgba(168,85,247,0.15); border:1px solid #a78bfa; border-radius:6px; padding:4px 12px; color:#a78bfa; font-size:11px; cursor:pointer;">⟲ 重置布局</button>
     <button id="pulseBtn" style="background:rgba(34,211,238,0.15); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; cursor:pointer;">✨ 开启脉动</button>
+    <button id="colorBtn" style="background:rgba(251,191,36,0.15); border:1px solid #fbbf24; border-radius:6px; padding:4px 12px; color:#fbbf24; font-size:11px; cursor:pointer;">🌈 域色配色</button>
   </div>
   <h3>🧠 神经突触图例</h3>
-  <div class="item"><div class="dot" style="background:#34d399"></div> 中枢神经元（refs/连接数 ≥ 15）</div>
-  <div class="item"><div class="dot" style="background:#22d3ee"></div> 专项神经元（refs/连接数 5-14）</div>
-  <div class="item"><div class="dot" style="background:#475569"></div> 末梢神经元（refs/连接数 &lt; 5）</div>
+  <div class="item"><div class="dot" style="background:#34d399"></div> 核心节点（refs/连接数 ≥ 15）</div>
+  <div class="item"><div class="dot" style="background:#475569"></div> 其他节点（refs/连接数 &lt; 15）</div>
   <div class="item"><div class="line" style="background:#64748b"></div> 突触连接（引用/路由）</div>
   <div class="item"><div class="dot" style="background:#a78bfa"></div> 高频强化（脉动）</div>
-  <h3 style="margin-top:10px;border-top:1px solid #1e293b;padding-top:8px;">🌈 域色表（同域聚团）</h3>
+  <h3 style="margin-top:10px;border-top:1px solid #1e293b;padding-top:8px;">🌈 域色表（点击开关域）</h3>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;">
-    <div class="item"><div class="dot" style="background:#34d399"></div> galaxy</div>
-    <div class="item"><div class="dot" style="background:#22d3ee"></div> devops</div>
-    <div class="item"><div class="dot" style="background:#a78bfa"></div> data-query</div>
-    <div class="item"><div class="dot" style="background:#fbbf24"></div> productivity</div>
-    <div class="item"><div class="dot" style="background:#fb7185"></div> ai-agents</div>
-    <div class="item"><div class="dot" style="background:#f97316"></div> finance</div>
-    <div class="item"><div class="dot" style="background:#e879f9"></div> openclaw</div>
-    <div class="item"><div class="dot" style="background:#2dd4bf"></div> creative</div>
-    <div class="item"><div class="dot" style="background:#facc15"></div> media</div>
-    <div class="item"><div class="dot" style="background:#94a3b8"></div> github</div>
-    <div class="item"><div class="dot" style="background:#60a5fa"></div> note-taking</div>
-    <div class="item"><div class="dot" style="background:#4ade80"></div> image-proc</div>
-    <div class="item"><div class="dot" style="background:#c084fc"></div> software-dev</div>
-    <div class="item"><div class="dot" style="background:#38bdf8"></div> web</div>
+    <div class="item cat-toggle" data-cat="Galaxy 域" title="点击隐藏/显示 Galaxy 域"><div class="dot" style="background:#34d399"></div> Galaxy 域</div>
+    <div class="item cat-toggle" data-cat="数据/商品域" title="点击隐藏/显示 数据/商品域"><div class="dot" style="background:#a78bfa"></div> 数据/商品域</div>
+    <div class="item cat-toggle" data-cat="飞书域" title="点击隐藏/显示 飞书域"><div class="dot" style="background:#22d3ee"></div> 飞书域</div>
+    <div class="item cat-toggle" data-cat="Hermes 运维域" title="点击隐藏/显示 Hermes 运维域"><div class="dot" style="background:#fb7185"></div> Hermes 运维域</div>
+    <div class="item cat-toggle" data-cat="金融域" title="点击隐藏/显示 金融域"><div class="dot" style="background:#fbbf24"></div> 金融域</div>
+    <div class="item cat-toggle" data-cat="文档/办公域" title="点击隐藏/显示 文档/办公域"><div class="dot" style="background:#64748b"></div> 文档/办公域</div>
   </div>
   <div class="hint">拖动节点固定位置 · 滚轮缩放 · 双击聚焦 · 悬停高亮邻接</div>
 </div>
@@ -100,16 +96,13 @@
 <div id="container"></div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-const nodes = [{"id": "agent-delegation-orchestration", "category": "autonomous-ai-agents", "refs": 0, "size": 3825}, {"id": "computer-use", "category": "autonomous-ai-agents", "refs": 0, "size": 18603}, {"id": "cron-troubleshooting", "category": "autonomous-ai-agents", "refs": 21, "size": 9463}, {"id": "hermes-agent", "category": "autonomous-ai-agents", "refs": 16, "size": 21306}, {"id": "hermes-config-troubleshooting", "category": "autonomous-ai-agents", "refs": 44, "size": 21688}, {"id": "hermes-desktop-features", "category": "autonomous-ai-agents", "refs": 6, "size": 4678}, {"id": "hermes-gateway-setup", "category": "autonomous-ai-agents", "refs": 10, "size": 11201}, {"id": "hermes-session-state-troubleshooting", "category": "autonomous-ai-agents", "refs": 2, "size": 3813}, {"id": "hermes-session-titles", "category": "autonomous-ai-agents", "refs": 1, "size": 5056}, {"id": "skill-architecture-governance", "category": "autonomous-ai-agents", "refs": 1, "size": 20052}, {"id": "skill-slimming", "category": "autonomous-ai-agents", "refs": 5, "size": 4331}, {"id": "architecture-diagram", "category": "creative", "refs": 0, "size": 5830}, {"id": "data-visualization", "category": "creative", "refs": 0, "size": 10933}, {"id": "mysql-large-json-extraction", "category": "data-query", "refs": 1, "size": 11188}, {"id": "sku-spu-matching-pipeline", "category": "data-query", "refs": 18, "size": 13744}, {"id": "cloud-resource-estimation", "category": "devops", "refs": 2, "size": 4284}, {"id": "dashboard-summary-api", "category": "devops", "refs": 3, "size": 6018}, {"id": "db-ssh-tunnel", "category": "devops", "refs": 8, "size": 7263}, {"id": "galaxy-platform", "category": "devops", "refs": 120, "size": 23348}, {"id": "kibana-es-monitor", "category": "devops", "refs": 19, "size": 7743}, {"id": "macos-system-management", "category": "devops", "refs": 1, "size": 8083}, {"id": "prod-stage-data-sync", "category": "devops", "refs": 1, "size": 6589}, {"id": "system-maintenance", "category": "devops", "refs": 15, "size": 9767}, {"id": "eastmoney-trade-scraper", "category": "finance", "refs": 1, "size": 5528}, {"id": "stock-kline-deep-dive", "category": "finance", "refs": 0, "size": 6680}, {"id": "trading-record-analysis", "category": "finance", "refs": 3, "size": 11123}, {"id": "auto-audit-script", "category": "galaxy", "refs": 0, "size": 6942}, {"id": "galaxy-stitch", "category": "galaxy", "refs": 10, "size": 18386}, {"id": "galaxy-warningcode-query", "category": "galaxy", "refs": 9, "size": 9159}, {"id": "image-upload", "category": "galaxy", "refs": 0, "size": 3925}, {"id": "manual-order-identification", "category": "galaxy", "refs": 3, "size": 4776}, {"id": "odin-platform", "category": "galaxy", "refs": 1, "size": 7866}, {"id": "github-issue-to-pr", "category": "github", "refs": 0, "size": 6058}, {"id": "image-processing", "category": "image-processing", "refs": 4, "size": 16240}, {"id": "audio-processing", "category": "media", "refs": 7, "size": 2883}, {"id": "voice-clone-finetune", "category": "media", "refs": 1, "size": 5173}, {"id": "obsidian", "category": "note-taking", "refs": 3, "size": 10019}, {"id": "mx-data", "category": "openclaw-imports", "refs": 1, "size": 12035}, {"id": "mx-search", "category": "openclaw-imports", "refs": 0, "size": 4908}, {"id": "mx-xuangu", "category": "openclaw-imports", "refs": 0, "size": 8163}, {"id": "mx-zixuan", "category": "openclaw-imports", "refs": 0, "size": 4868}, {"id": "data-cleaning", "category": "productivity", "refs": 2, "size": 4009}, {"id": "feishu-doc-optimization", "category": "productivity", "refs": 0, "size": 14899}, {"id": "feishu-im-messaging", "category": "productivity", "refs": 0, "size": 3675}, {"id": "feishu-wiki-access", "category": "productivity", "refs": 3, "size": 1938}, {"id": "fix-file-extension", "category": "productivity", "refs": 0, "size": 2588}, {"id": "meeting-action-items", "category": "productivity", "refs": 0, "size": 3808}, {"id": "pdf", "category": "productivity", "refs": 1, "size": 12244}, {"id": "performance-review", "category": "productivity", "refs": 0, "size": 9023}, {"id": "resume-interview-prep", "category": "productivity", "refs": 2, "size": 8004}, {"id": "safari-extraction", "category": "productivity", "refs": 1, "size": 8264}, {"id": "session-librarian", "category": "productivity", "refs": 0, "size": 4827}, {"id": "stock-portfolio-monitor", "category": "productivity", "refs": 5, "size": 12740}, {"id": "word-documents", "category": "productivity", "refs": 15, "size": 20072}, {"id": "xlsx", "category": "productivity", "refs": 1, "size": 9655}, {"id": "inspecting-hermes-desktop-dom", "category": "software-development", "refs": 0, "size": 6204}, {"id": "browser-automation", "category": "web", "refs": 2, "size": 7578}];
+const nodes = [{"id":"agent-delegation-orchestration","category":"Hermes 运维域","refs":0,"size":3825},{"id":"computer-use","category":"Hermes 运维域","refs":0,"size":18603},{"id":"cron-troubleshooting","category":"Hermes 运维域","refs":21,"size":9463},{"id":"hermes-agent","category":"Hermes 运维域","refs":16,"size":21306},{"id":"hermes-config-troubleshooting","category":"Hermes 运维域","refs":44,"size":21688},{"id":"hermes-desktop-features","category":"文档/办公域","refs":6,"size":4678},{"id":"hermes-gateway-setup","category":"Hermes 运维域","refs":10,"size":11201},{"id":"hermes-session-state-troubleshooting","category":"文档/办公域","refs":2,"size":3813},{"id":"hermes-session-titles","category":"Hermes 运维域","refs":1,"size":5056},{"id":"skill-architecture-governance","category":"Hermes 运维域","refs":1,"size":20052},{"id":"skill-slimming","category":"Hermes 运维域","refs":5,"size":4331},{"id":"architecture-diagram","category":"文档/办公域","refs":0,"size":5830},{"id":"data-visualization","category":"文档/办公域","refs":0,"size":10933},{"id":"mysql-large-json-extraction","category":"数据/商品域","refs":1,"size":11188},{"id":"sku-spu-matching-pipeline","category":"数据/商品域","refs":18,"size":13744},{"id":"cloud-resource-estimation","category":"文档/办公域","refs":2,"size":4284},{"id":"dashboard-summary-api","category":"文档/办公域","refs":3,"size":6018},{"id":"db-ssh-tunnel","category":"文档/办公域","refs":8,"size":7263},{"id":"galaxy-platform","category":"Galaxy 域","refs":120,"size":23348},{"id":"kibana-es-monitor","category":"Hermes 运维域","refs":19,"size":7743},{"id":"macos-system-management","category":"文档/办公域","refs":1,"size":8083},{"id":"prod-stage-data-sync","category":"文档/办公域","refs":1,"size":6589},{"id":"system-maintenance","category":"Hermes 运维域","refs":15,"size":9767},{"id":"eastmoney-trade-scraper","category":"金融域","refs":1,"size":5528},{"id":"stock-kline-deep-dive","category":"金融域","refs":0,"size":6680},{"id":"trading-record-analysis","category":"金融域","refs":3,"size":11123},{"id":"auto-audit-script","category":"Galaxy 域","refs":0,"size":6942},{"id":"galaxy-stitch","category":"Galaxy 域","refs":10,"size":18386},{"id":"galaxy-warningcode-query","category":"Galaxy 域","refs":9,"size":9159},{"id":"image-upload","category":"Galaxy 域","refs":0,"size":3925},{"id":"manual-order-identification","category":"Galaxy 域","refs":3,"size":4776},{"id":"odin-platform","category":"Galaxy 域","refs":1,"size":7866},{"id":"github-issue-to-pr","category":"文档/办公域","refs":0,"size":6058},{"id":"image-processing","category":"文档/办公域","refs":4,"size":16240},{"id":"audio-processing","category":"文档/办公域","refs":7,"size":2883},{"id":"voice-clone-finetune","category":"文档/办公域","refs":1,"size":5173},{"id":"obsidian","category":"文档/办公域","refs":3,"size":10019},{"id":"mx-data","category":"金融域","refs":1,"size":12035},{"id":"mx-search","category":"金融域","refs":0,"size":4908},{"id":"mx-xuangu","category":"金融域","refs":0,"size":8163},{"id":"mx-zixuan","category":"金融域","refs":0,"size":4868},{"id":"data-cleaning","category":"文档/办公域","refs":2,"size":4009},{"id":"feishu-doc-optimization","category":"飞书域","refs":0,"size":14899},{"id":"feishu-im-messaging","category":"飞书域","refs":0,"size":3675},{"id":"feishu-wiki-access","category":"飞书域","refs":3,"size":1938},{"id":"fix-file-extension","category":"文档/办公域","refs":0,"size":2588},{"id":"meeting-action-items","category":"文档/办公域","refs":0,"size":3808},{"id":"pdf","category":"文档/办公域","refs":1,"size":12244},{"id":"performance-review","category":"文档/办公域","refs":0,"size":9023},{"id":"resume-interview-prep","category":"文档/办公域","refs":2,"size":8004},{"id":"safari-extraction","category":"文档/办公域","refs":1,"size":8264},{"id":"session-librarian","category":"文档/办公域","refs":0,"size":4827},{"id":"stock-portfolio-monitor","category":"文档/办公域","refs":5,"size":12740},{"id":"word-documents","category":"文档/办公域","refs":15,"size":20072},{"id":"xlsx","category":"文档/办公域","refs":1,"size":9655},{"id":"inspecting-hermes-desktop-dom","category":"文档/办公域","refs":0,"size":6204},{"id":"browser-automation","category":"文档/办公域","refs":2,"size":7578}];
 const links = [{"source": "cron-troubleshooting", "target": "hermes-config-troubleshooting"}, {"source": "hermes-config-troubleshooting", "target": "cron-troubleshooting"}, {"source": "hermes-config-troubleshooting", "target": "hermes-agent"}, {"source": "hermes-config-troubleshooting", "target": "hermes-gateway-setup"}, {"source": "hermes-desktop-features", "target": "hermes-agent"}, {"source": "hermes-desktop-features", "target": "inspecting-hermes-desktop-dom"}, {"source": "hermes-gateway-setup", "target": "hermes-agent"}, {"source": "hermes-gateway-setup", "target": "hermes-config-troubleshooting"}, {"source": "hermes-session-state-troubleshooting", "target": "cron-troubleshooting"}, {"source": "hermes-session-state-troubleshooting", "target": "hermes-config-troubleshooting"}, {"source": "hermes-session-state-troubleshooting", "target": "hermes-desktop-features"}, {"source": "hermes-session-titles", "target": "hermes-agent"}, {"source": "skill-architecture-governance", "target": "agent-delegation-orchestration"}, {"source": "skill-architecture-governance", "target": "computer-use"}, {"source": "skill-architecture-governance", "target": "cron-troubleshooting"}, {"source": "skill-architecture-governance", "target": "hermes-agent"}, {"source": "skill-architecture-governance", "target": "hermes-config-troubleshooting"}, {"source": "skill-architecture-governance", "target": "hermes-desktop-features"}, {"source": "skill-architecture-governance", "target": "hermes-gateway-setup"}, {"source": "skill-architecture-governance", "target": "hermes-session-state-troubleshooting"}, {"source": "skill-architecture-governance", "target": "hermes-session-titles"}, {"source": "skill-architecture-governance", "target": "skill-slimming"}, {"source": "skill-architecture-governance", "target": "architecture-diagram"}, {"source": "skill-architecture-governance", "target": "data-visualization"}, {"source": "skill-architecture-governance", "target": "mysql-large-json-extraction"}, {"source": "skill-architecture-governance", "target": "sku-spu-matching-pipeline"}, {"source": "skill-architecture-governance", "target": "cloud-resource-estimation"}, {"source": "skill-architecture-governance", "target": "dashboard-summary-api"}, {"source": "skill-architecture-governance", "target": "db-ssh-tunnel"}, {"source": "skill-architecture-governance", "target": "galaxy-platform"}, {"source": "skill-architecture-governance", "target": "kibana-es-monitor"}, {"source": "skill-architecture-governance", "target": "macos-system-management"}, {"source": "skill-architecture-governance", "target": "prod-stage-data-sync"}, {"source": "skill-architecture-governance", "target": "system-maintenance"}, {"source": "skill-architecture-governance", "target": "eastmoney-trade-scraper"}, {"source": "skill-architecture-governance", "target": "stock-kline-deep-dive"}, {"source": "skill-architecture-governance", "target": "trading-record-analysis"}, {"source": "skill-architecture-governance", "target": "auto-audit-script"}, {"source": "skill-architecture-governance", "target": "galaxy-stitch"}, {"source": "skill-architecture-governance", "target": "galaxy-warningcode-query"}, {"source": "skill-architecture-governance", "target": "image-upload"}, {"source": "skill-architecture-governance", "target": "manual-order-identification"}, {"source": "skill-architecture-governance", "target": "odin-platform"}, {"source": "skill-architecture-governance", "target": "image-processing"}, {"source": "skill-architecture-governance", "target": "obsidian"}, {"source": "skill-architecture-governance", "target": "mx-data"}, {"source": "skill-architecture-governance", "target": "data-cleaning"}, {"source": "skill-architecture-governance", "target": "feishu-doc-optimization"}, {"source": "skill-architecture-governance", "target": "feishu-wiki-access"}, {"source": "skill-architecture-governance", "target": "fix-file-extension"}, {"source": "skill-architecture-governance", "target": "meeting-action-items"}, {"source": "skill-architecture-governance", "target": "pdf"}, {"source": "skill-architecture-governance", "target": "performance-review"}, {"source": "skill-architecture-governance", "target": "resume-interview-prep"}, {"source": "skill-architecture-governance", "target": "safari-extraction"}, {"source": "skill-architecture-governance", "target": "session-librarian"}, {"source": "skill-architecture-governance", "target": "stock-portfolio-monitor"}, {"source": "skill-architecture-governance", "target": "word-documents"}, {"source": "skill-architecture-governance", "target": "xlsx"}, {"source": "skill-architecture-governance", "target": "inspecting-hermes-desktop-dom"}, {"source": "skill-architecture-governance", "target": "browser-automation"}, {"source": "skill-slimming", "target": "hermes-agent"}, {"source": "skill-slimming", "target": "galaxy-platform"}, {"source": "skill-slimming", "target": "stock-portfolio-monitor"}, {"source": "skill-slimming", "target": "word-documents"}, {"source": "cloud-resource-estimation", "target": "word-documents"}, {"source": "cloud-resource-estimation", "target": "xlsx"}, {"source": "dashboard-summary-api", "target": "galaxy-platform"}, {"source": "galaxy-platform", "target": "mysql-large-json-extraction"}, {"source": "galaxy-platform", "target": "sku-spu-matching-pipeline"}, {"source": "galaxy-platform", "target": "dashboard-summary-api"}, {"source": "galaxy-platform", "target": "auto-audit-script"}, {"source": "galaxy-platform", "target": "galaxy-stitch"}, {"source": "galaxy-platform", "target": "galaxy-warningcode-query"}, {"source": "galaxy-platform", "target": "image-upload"}, {"source": "galaxy-platform", "target": "manual-order-identification"}, {"source": "galaxy-platform", "target": "odin-platform"}, {"source": "galaxy-platform", "target": "xlsx"}, {"source": "system-maintenance", "target": "mx-data"}, {"source": "system-maintenance", "target": "pdf"}, {"source": "system-maintenance", "target": "xlsx"}, {"source": "trading-record-analysis", "target": "mx-data"}, {"source": "trading-record-analysis", "target": "stock-portfolio-monitor"}, {"source": "galaxy-stitch", "target": "hermes-agent"}, {"source": "galaxy-stitch", "target": "galaxy-warningcode-query"}, {"source": "galaxy-stitch", "target": "image-upload"}, {"source": "galaxy-stitch", "target": "odin-platform"}, {"source": "galaxy-warningcode-query", "target": "dashboard-summary-api"}, {"source": "galaxy-warningcode-query", "target": "galaxy-platform"}, {"source": "galaxy-warningcode-query", "target": "kibana-es-monitor"}, {"source": "image-upload", "target": "hermes-agent"}, {"source": "odin-platform", "target": "galaxy-platform"}, {"source": "odin-platform", "target": "galaxy-stitch"}, {"source": "audio-processing", "target": "hermes-agent"}, {"source": "voice-clone-finetune", "target": "audio-processing"}, {"source": "obsidian", "target": "hermes-agent"}, {"source": "mx-data", "target": "xlsx"}, {"source": "data-cleaning", "target": "xlsx"}, {"source": "feishu-doc-optimization", "target": "galaxy-platform"}, {"source": "feishu-doc-optimization", "target": "feishu-wiki-access"}, {"source": "feishu-doc-optimization", "target": "xlsx"}, {"source": "feishu-im-messaging", "target": "image-processing"}, {"source": "feishu-im-messaging", "target": "feishu-wiki-access"}, {"source": "pdf", "target": "xlsx"}, {"source": "performance-review", "target": "word-documents"}, {"source": "resume-interview-prep", "target": "galaxy-platform"}, {"source": "safari-extraction", "target": "computer-use"}, {"source": "xlsx", "target": "pdf"}];
 
 // 分类配色
 const catColors = {
-  'galaxy': '#34d399', 'devops': '#22d3ee', 'data-query': '#a78bfa',
-  'productivity': '#fbbf24', 'autonomous-ai-agents': '#fb7185',
-  'finance': '#f97316', 'openclaw-imports': '#e879f9', 'creative': '#2dd4bf',
-  'media': '#facc15', 'github': '#94a3b8', 'note-taking': '#60a5fa',
-  'image-processing': '#4ade80', 'software-development': '#c084fc', 'web': '#38bdf8',
+  'Galaxy 域': '#34d399', '数据/商品域': '#a78bfa', '飞书域': '#22d3ee',
+  'Hermes 运维域': '#fb7185', '金融域': '#fbbf24', '文档/办公域': '#64748b',
 };
 const N = nodes.length;
 const width = window.innerWidth, height = window.innerHeight;
@@ -125,12 +118,11 @@ nodes.forEach(n => {
   n.outdeg = outdeg[n.id]||0;
   n.degree = n.indeg + n.outdeg;
 });
-// 中枢/专项/末梢:refs 与连接数取高者(治理类技能 refs 低但连接数高,不能被误判为末梢)
+// 核心/其他:refs 与连接数取高者,≥15 为核心,其余为其他(专项/边缘不再细分)
 function hubLevel(d) {
-  const v = Math.max(d.refs || 0, d.degree);
-  return v >= 15 ? '中枢' : v >= 5 ? '专项' : '末梢';
+  return (Math.max(d.refs || 0, d.degree) >= 15) ? '核心' : '其他';
 }
-function isHub(d) { return hubLevel(d) === '中枢'; }
+function isHub(d) { return hubLevel(d) === '核心'; }
 
 const svg = d3.select('#container').append('svg')
   .attr('width', width).attr('height', height);
@@ -176,7 +168,7 @@ cats.forEach((c, i) => {
   const ang = (i / nCats) * 2 * Math.PI - Math.PI / 2;
   catTargets[c] = { x: width / 2 + R * Math.cos(ang), y: height / 2 + R * Math.sin(ang) };
 });
-// 中枢（refs/连接数≥15）仍锚定中心
+// 核心（refs/连接数≥15）仍锚定中心
 sim.force('x', d3.forceX(d => isHub(d) ? width/2 + (Math.random()-0.5)*120 : catTargets[d.category].x).strength(d => isHub(d) ? 0.08 : 0.12));
 sim.force('y', d3.forceY(d => isHub(d) ? height/2 + (Math.random()-0.5)*100 : catTargets[d.category].y).strength(d => isHub(d) ? 0.08 : 0.12));
 
@@ -225,12 +217,13 @@ const node = g.append('g').selectAll('circle').data(nodes).join('circle')
     .on('drag', dragged)
     .on('end', dragended));
 
-// 高频强化脉动环（中枢/高连接节点）
+// 高频强化脉动环（核心/高连接节点）
 const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => Math.max(d.refs || 0, d.degree) >= 10)).join('circle')
   .attr('class', 'pulse-ring')
   .attr('stroke', d => d.cat)
   .attr('r', d => d.r)
-  .style('--r', d => d.r + 'px');
+  .style('--r', d => d.r + 'px')
+  .style('animation-delay', () => (-Math.random() * 2.2).toFixed(2) + 's');  // 错开相位,像连续脑电波而非齐跳
 
 // 标签
 const labels = g.append('g').selectAll('text').data(nodes).join('text')
@@ -252,7 +245,7 @@ node.on('mouseover', (e, d) => {
              <div class="row"><span class="k">refs</span><span>${d.refs}</span></div>
              <div class="row"><span class="k">连接</span><span>${d.outdeg}出 / ${d.indeg}入（共${d.degree}）</span></div>
              <div class="row"><span class="k">体积</span><span>${(d.size/1024).toFixed(1)} KB</span></div>
-             <div class="row"><span class="k">类型</span><span>${hubLevel(d)}</span></div>`)
+             <div class="row"><span class="k">档位</span><span>${hubLevel(d)}</span></div>`)
       .style('left', (e.pageX + 14) + 'px').style('top', (e.pageY - 10) + 'px');
   })
   .on('mousemove', (e) => {
@@ -341,13 +334,67 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   sim.alpha(1).restart();
 });
 
-// 脉动动画开关（默认关——省性能；开启后中枢节点脉冲扩散）
+// 脉动动画开关（默认关——省性能；开启后核心节点脉冲扩散）
 let pulseOn = false;
 document.getElementById('pulseBtn').addEventListener('click', () => {
   pulseOn = !pulseOn;
   pulses.classed('on', pulseOn);
   document.getElementById('pulseBtn').textContent = pulseOn ? '⏸ 关闭脉动' : '✨ 开启脉动';
   document.getElementById('pulseBtn').style.background = pulseOn ? 'rgba(34,211,238,0.25)' : 'rgba(34,211,238,0.15)';
+});
+
+// 配色开关：域色(6 语义域) ↔ 档位色(核心/其他 2 色)
+let colorMode = 'domain';
+const levelColors = { '核心': '#34d399', '其他': '#475569' };
+function nodeColor(d) {
+  return colorMode === 'domain' ? d.cat : (levelColors[hubLevel(d)] || '#64748b');
+}
+function applyColorScheme() {
+  node.attr('fill', nodeColor).attr('stroke', nodeColor);
+  halos.attr('stroke', nodeColor);
+  haloOuter.attr('stroke', nodeColor);
+  pulses.attr('stroke', nodeColor);
+}
+document.getElementById('colorBtn').addEventListener('click', () => {
+  colorMode = colorMode === 'domain' ? 'level' : 'domain';
+  applyColorScheme();
+  const btn = document.getElementById('colorBtn');
+  // 按钮显示"当前模式"(非目标),高亮表示处于非默认的档位色模式
+  btn.textContent = colorMode === 'domain' ? '🌈 域色配色' : '🎨 档位配色';
+  btn.style.background = colorMode === 'domain' ? 'rgba(251,191,36,0.15)' : 'rgba(251,191,36,0.35)';
+});
+
+// 域筛选：点击域色表隐藏/显示对应域（节点+边一起，布局自动重排）
+const hiddenCats = new Set();
+function isNodeVisible(n) { return !hiddenCats.has(n.category); }
+function isLinkVisible(l) {
+  const a = l.source.id || l.source, b = l.target.id || l.target;
+  const na = nodes.find(x => x.id === a), nb = nodes.find(x => x.id === b);
+  return !!(na && nb && isNodeVisible(na) && isNodeVisible(nb));
+}
+function applyDomainFilter() {
+  const showN = d => isNodeVisible(d) ? null : 'none';
+  node.style('display', showN);
+  haloOuter.style('display', showN);
+  halos.style('display', showN);
+  pulses.style('display', showN);
+  labels.style('display', showN);
+  link.style('display', l => isLinkVisible(l) ? null : 'none');
+  // 隐藏域节点退出力模拟,剩余节点重新聚拢
+  sim.nodes(nodes.filter(isNodeVisible));
+  sim.force('link').links(links.filter(isLinkVisible));
+  sim.alpha(0.6).restart();
+  // 图例反馈:隐藏域划线变暗
+  document.querySelectorAll('#legend .cat-toggle').forEach(el => {
+    el.classList.toggle('cat-off', hiddenCats.has(el.dataset.cat));
+  });
+}
+document.querySelectorAll('#legend .cat-toggle').forEach(el => {
+  el.addEventListener('click', () => {
+    const c = el.dataset.cat;
+    if (hiddenCats.has(c)) hiddenCats.delete(c); else hiddenCats.add(c);
+    applyDomainFilter();
+  });
 });
 </script>
 </body>
