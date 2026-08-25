@@ -57,7 +57,7 @@
 <body>
 <div id="title">
   Skill 神经突触网络
-  <div class="sub">57 神经元 · 101 突触连接 · 8 中枢 / 8 专项</div>
+  <div class="sub">57 神经元 · 101 突触连接 · 9 中枢 / 10 专项</div>
 </div>
 <div id="legend">
   <a href="index.html" style="display:inline-block; margin-bottom:8px; background:rgba(34,211,238,0.12); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; text-decoration:none;">← 返回目录</a>
@@ -66,9 +66,9 @@
     <button id="pulseBtn" style="background:rgba(34,211,238,0.15); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; cursor:pointer;">✨ 开启脉动</button>
   </div>
   <h3>🧠 神经突触图例</h3>
-  <div class="item"><div class="dot" style="background:#34d399"></div> 中枢神经元（refs ≥ 15）</div>
-  <div class="item"><div class="dot" style="background:#22d3ee"></div> 专项神经元（refs 5-14）</div>
-  <div class="item"><div class="dot" style="background:#475569"></div> 末梢神经元（refs &lt; 5）</div>
+  <div class="item"><div class="dot" style="background:#34d399"></div> 中枢神经元（refs/连接数 ≥ 15）</div>
+  <div class="item"><div class="dot" style="background:#22d3ee"></div> 专项神经元（refs/连接数 5-14）</div>
+  <div class="item"><div class="dot" style="background:#475569"></div> 末梢神经元（refs/连接数 &lt; 5）</div>
   <div class="item"><div class="line" style="background:#64748b"></div> 突触连接（引用/路由）</div>
   <div class="item"><div class="dot" style="background:#a78bfa"></div> 高频强化（脉动）</div>
   <h3 style="margin-top:10px;border-top:1px solid #1e293b;padding-top:8px;">🌈 域色表（同域聚团）</h3>
@@ -107,6 +107,24 @@ const catColors = {
 };
 const N = nodes.length;
 const width = window.innerWidth, height = window.innerHeight;
+
+// ---- 图结构连接数(入度+出度),分类用 ----
+const indeg = {}, outdeg = {};
+links.forEach(l => {
+  outdeg[l.source] = (outdeg[l.source]||0) + 1;
+  indeg[l.target] = (indeg[l.target]||0) + 1;
+});
+nodes.forEach(n => {
+  n.indeg = indeg[n.id]||0;
+  n.outdeg = outdeg[n.id]||0;
+  n.degree = n.indeg + n.outdeg;
+});
+// 中枢/专项/末梢:refs 与连接数取高者(治理类技能 refs 低但连接数高,不能被误判为末梢)
+function hubLevel(d) {
+  const v = Math.max(d.refs || 0, d.degree);
+  return v >= 15 ? '中枢' : v >= 5 ? '专项' : '末梢';
+}
+function isHub(d) { return hubLevel(d) === '中枢'; }
 
 const svg = d3.select('#container').append('svg')
   .attr('width', width).attr('height', height);
@@ -157,9 +175,9 @@ cats.forEach((c, i) => {
   const ang = (i / nCats) * 2 * Math.PI - Math.PI / 2;
   catTargets[c] = { x: width / 2 + R * Math.cos(ang), y: height / 2 + R * Math.sin(ang) };
 });
-// 中枢（refs>=15）仍锚定中心
-sim.force('x', d3.forceX(d => d.refs >= 15 ? width/2 + (Math.random()-0.5)*120 : catTargets[d.category].x).strength(d => d.refs >= 15 ? 0.08 : 0.12));
-sim.force('y', d3.forceY(d => d.refs >= 15 ? height/2 + (Math.random()-0.5)*100 : catTargets[d.category].y).strength(d => d.refs >= 15 ? 0.08 : 0.12));
+// 中枢（refs/连接数≥15）仍锚定中心
+sim.force('x', d3.forceX(d => isHub(d) ? width/2 + (Math.random()-0.5)*120 : catTargets[d.category].x).strength(d => isHub(d) ? 0.08 : 0.12));
+sim.force('y', d3.forceY(d => isHub(d) ? height/2 + (Math.random()-0.5)*100 : catTargets[d.category].y).strength(d => isHub(d) ? 0.08 : 0.12));
 
 // 贝塞尔控制点(神经纤维弯曲)
 function curvePath(d) {
@@ -202,8 +220,8 @@ const node = g.append('g').selectAll('circle').data(nodes).join('circle')
     .on('drag', dragged)
     .on('end', dragended));
 
-// 高频强化脉动环
-const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => d.refs >= 10)).join('circle')
+// 高频强化脉动环（中枢/高连接节点）
+const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => Math.max(d.refs || 0, d.degree) >= 10)).join('circle')
   .attr('class', 'pulse-ring')
   .attr('stroke', d => d.cat)
   .attr('r', d => d.r)
@@ -213,9 +231,9 @@ const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => d.refs >
 const labels = g.append('g').selectAll('text').data(nodes).join('text')
   .attr('dy', d => d.r + 15)
   .attr('text-anchor', 'middle')
-  .attr('font-size', d => d.refs >= 15 ? 12 : 10)
-  .attr('font-weight', d => d.refs >= 15 ? 'bold' : 'normal')
-  .attr('fill', d => d.refs >= 15 ? '#f1f5f9' : '#94a3b8')
+  .attr('font-size', d => isHub(d) ? 12 : 10)
+  .attr('font-weight', d => isHub(d) ? 'bold' : 'normal')
+  .attr('fill', d => isHub(d) ? '#f1f5f9' : '#94a3b8')
   .attr('paint-order', 'stroke')
   .attr('stroke', '#020617').attr('stroke-width', 3).attr('stroke-opacity', 0.6)
   .text(d => d.id.length > 24 ? d.id.slice(0, 22) + '…' : d.id);
@@ -227,8 +245,9 @@ node.on('mouseover', (e, d) => {
       .html(`<div class="name">${d.id}</div>
              <div class="row"><span class="k">分类</span><span>${d.category}</span></div>
              <div class="row"><span class="k">refs</span><span>${d.refs}</span></div>
+             <div class="row"><span class="k">连接</span><span>${d.outdeg}出 / ${d.indeg}入（共${d.degree}）</span></div>
              <div class="row"><span class="k">体积</span><span>${(d.size/1024).toFixed(1)} KB</span></div>
-             <div class="row"><span class="k">类型</span><span>${d.refs >= 15 ? '中枢' : d.refs >= 5 ? '专项' : '末梢'}</span></div>`)
+             <div class="row"><span class="k">类型</span><span>${hubLevel(d)}</span></div>`)
       .style('left', (e.pageX + 14) + 'px').style('top', (e.pageY - 10) + 'px');
   })
   .on('mousemove', (e) => {
