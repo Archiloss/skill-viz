@@ -191,7 +191,8 @@ function dragstarted(e, d) {
 function dragged(e, d) { d.fx = e.x; d.fy = e.y; }
 function dragended(e, d) {
   if (!e.active) sim.alphaTarget(0);
-  d.fx = null; d.fy = null;
+  // 松手后固定在该位置，不释放 fx/fy → 拖完停住不弹回
+  d.fx = d.x; d.fy = d.y;
 }
 </script>
 </body>
