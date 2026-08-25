@@ -35,12 +35,13 @@
   #tooltip .row { display:flex; justify-content:space-between; gap:16px; margin:2px 0; }
   #tooltip .row .k { color:#64748b; }
   svg text { user-select:none; }
-  /* 脉冲动画 */
+  /* 脉冲动画（默认关闭，点按钮开启） */
   @keyframes pulse {
     0% { r: var(--r); opacity:0.6; }
     100% { r: calc(var(--r) + 10px); opacity:0; }
   }
-  .pulse-ring { animation: pulse 3s ease-out infinite; fill:none; stroke-width:1.5; }
+  .pulse-ring { fill:none; stroke-width:1.5; }
+  .pulse-ring.on { animation: pulse 3s ease-out infinite; }
 </style>
 </head>
 <body>
@@ -50,8 +51,9 @@
 </div>
 <div id="legend">
   <a href="index.html" style="display:inline-block; margin-bottom:8px; background:rgba(34,211,238,0.12); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; text-decoration:none;">← 返回目录</a>
-  <div style="margin-bottom:8px;">
+  <div style="margin-bottom:8px; display:flex; gap:6px; flex-wrap:wrap;">
     <button id="resetBtn" style="background:rgba(168,85,247,0.15); border:1px solid #a78bfa; border-radius:6px; padding:4px 12px; color:#a78bfa; font-size:11px; cursor:pointer;">⟲ 重置布局</button>
+    <button id="pulseBtn" style="background:rgba(34,211,238,0.15); border:1px solid #22d3ee; border-radius:6px; padding:4px 12px; color:#22d3ee; font-size:11px; cursor:pointer;">✨ 开启脉动</button>
   </div>
   <h3>🧠 神经突触图例</h3>
   <div class="item"><div class="dot" style="background:#34d399"></div> 中枢神经元（refs ≥ 15）</div>
@@ -202,6 +204,15 @@ function dragended(e, d) {
 document.getElementById('resetBtn').addEventListener('click', () => {
   nodes.forEach(n => { n.fx = null; n.fy = null; });
   sim.alpha(1).restart();
+});
+
+// 脉动动画开关（默认关——省性能；开启后中枢节点脉冲扩散）
+let pulseOn = false;
+document.getElementById('pulseBtn').addEventListener('click', () => {
+  pulseOn = !pulseOn;
+  pulses.classed('on', pulseOn);
+  document.getElementById('pulseBtn').textContent = pulseOn ? '⏸ 关闭脉动' : '✨ 开启脉动';
+  document.getElementById('pulseBtn').style.background = pulseOn ? 'rgba(34,211,238,0.25)' : 'rgba(34,211,238,0.15)';
 });
 </script>
 </body>
