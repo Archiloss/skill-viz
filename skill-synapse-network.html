@@ -151,11 +151,12 @@ nodes.forEach(n => {
   n.cat = catColors[n.category] || '#64748b';
 });
 
-// 力导向(velocityDecay 略高→收敛更柔和)
+// 力导向(velocityDecay 高→弹跳快速平息)
 const sim = d3.forceSimulation(nodes)
-  .velocityDecay(0.42)
+  .velocityDecay(0.55)
+  .alpha(0.6)  // 初始半功率起步,首屏不弹
   .force('link', d3.forceLink(links).id(d => d.id).distance(l => l.source.r + l.target.r + 75))
-  .force('charge', d3.forceManyBody().strength(d => -110 - d.refs * 4))
+  .force('charge', d3.forceManyBody().strength(d => -90 - d.refs * 3))
   .force('center', d3.forceCenter(width / 2, height / 2))
   .force('collide', d3.forceCollide().radius(d => d.r + 40));
 
@@ -182,8 +183,8 @@ sim.force('domain', (alpha) => {
       const a = nodes[i];
       const dx = b.x - a.x, dy = b.y - a.y;
       const dist = Math.max(1, Math.hypot(dx, dy));
-      // 吸引(同域)取负 / 排斥(异域)取正,1/√dist 衰减(远距离仍有力)
-      const sign = a.category === b.category ? -8 : 18;
+      // 吸引(同域)取负 / 排斥(异域)取正,1/√dist 衰减;系数适中防震荡
+      const sign = a.category === b.category ? -4 : 10;
       const f = alpha * sign / Math.sqrt(dist);
       const ux = dx / dist, uy = dy / dist;
       b.vx += ux * f; b.vy += uy * f;
@@ -348,10 +349,10 @@ function dragended(e, d) {
   d.fx = d.x; d.fy = d.y;
 }
 
-// 重置布局：释放所有固定点，重新跑力模拟
+// 重置布局：释放所有固定点，重新跑力模拟（半功率起步，快速稳定不弹跳）
 document.getElementById('resetBtn').addEventListener('click', () => {
   nodes.forEach(n => { n.fx = null; n.fy = null; });
-  sim.alpha(1).restart();
+  sim.alphaTarget(0).alpha(0.5).restart();
 });
 
 // 脉动动画开关（默认关——省性能；开启后核心节点脉冲扩散）
