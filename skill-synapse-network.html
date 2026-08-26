@@ -80,7 +80,7 @@
   <div class="item"><div class="dot" style="background:#34d399"></div> 核心节点（refs/连接数 ≥ 15）</div>
   <div class="item"><div class="dot" style="background:#475569"></div> 其他节点（refs/连接数 &lt; 15）</div>
   <div class="item"><div class="line" style="background:#64748b"></div> 突触连接（引用/路由）</div>
-  <div class="item"><div class="dot" style="background:#a78bfa"></div> 高频强化（脉动）</div>
+  <div class="item"><div class="dot" style="background:#a78bfa"></div> 高频节点（refs/连接数 ≥ 10，脉动标注）</div>
   <h3 style="margin-top:10px;border-top:1px solid #1e293b;padding-top:8px;">🌈 域色表（点击开关域）</h3>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;">
     <div class="item cat-toggle" data-cat="Galaxy 域" title="点击隐藏/显示 Galaxy 域"><div class="dot" style="background:#34d399"></div> Galaxy 域</div>
@@ -239,7 +239,7 @@ const node = g.append('g').selectAll('circle').data(nodes).join('circle')
     .on('drag', dragged)
     .on('end', dragended));
 
-// 高频强化脉动环（核心/高连接节点）
+// 高频节点脉动环(refs/连接数 ≥ 10:核心+次核心)
 const pulses = g.append('g').selectAll('circle').data(nodes.filter(d => Math.max(d.refs || 0, d.degree) >= 10)).join('circle')
   .attr('class', 'pulse-ring')
   .attr('stroke', d => d.cat)
