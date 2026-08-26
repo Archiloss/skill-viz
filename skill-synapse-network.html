@@ -172,6 +172,26 @@ cats.forEach((c, i) => {
 sim.force('x', d3.forceX(d => isHub(d) ? width/2 + (Math.random()-0.5)*120 : catTargets[d.category].x).strength(d => isHub(d) ? 0.08 : 0.12));
 sim.force('y', d3.forceY(d => isHub(d) ? height/2 + (Math.random()-0.5)*100 : catTargets[d.category].y).strength(d => isHub(d) ? 0.08 : 0.12));
 
+// 同域成对吸引、异域成对排斥(自定义力;中枢不参与,保持居中)
+sim.force('domain', (alpha) => {
+  for (let i = 0; i < nodes.length; i++) {
+    if (isHub(nodes[i])) continue;
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      if (isHub(b)) continue;
+      const a = nodes[i];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.max(1, Math.hypot(dx, dy));
+      // 吸引(同域)取负 / 排斥(异域)取正,强度随距离 1/dist 衰减
+      const sign = a.category === b.category ? -2.2 : 9;
+      const f = alpha * sign / dist;
+      const ux = dx / dist, uy = dy / dist;
+      b.vx += ux * f; b.vy += uy * f;
+      a.vx -= ux * f; a.vy -= uy * f;
+    }
+  }
+});
+
 // 贝塞尔控制点(神经纤维弯曲)
 function curvePath(d) {
   const x1 = d.source.x, y1 = d.source.y, x2 = d.target.x, y2 = d.target.y;
