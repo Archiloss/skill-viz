@@ -154,10 +154,10 @@ nodes.forEach(n => {
 // 力导向(velocityDecay 略高→收敛更柔和)
 const sim = d3.forceSimulation(nodes)
   .velocityDecay(0.42)
-  .force('link', d3.forceLink(links).id(d => d.id).distance(l => l.source.r + l.target.r + 130))
-  .force('charge', d3.forceManyBody().strength(d => -160 - d.refs * 5))
+  .force('link', d3.forceLink(links).id(d => d.id).distance(l => l.source.r + l.target.r + 75))
+  .force('charge', d3.forceManyBody().strength(d => -110 - d.refs * 4))
   .force('center', d3.forceCenter(width / 2, height / 2))
-  .force('collide', d3.forceCollide().radius(d => d.r + 48));
+  .force('collide', d3.forceCollide().radius(d => d.r + 40));
 
 // 同域聚团：每个域一个目标区域（圆形布局），同域节点被吸引到同一块
 const catTargets = {};
@@ -182,9 +182,9 @@ sim.force('domain', (alpha) => {
       const a = nodes[i];
       const dx = b.x - a.x, dy = b.y - a.y;
       const dist = Math.max(1, Math.hypot(dx, dy));
-      // 吸引(同域)取负 / 排斥(异域)取正,强度随距离 1/dist 衰减
-      const sign = a.category === b.category ? -2.2 : 9;
-      const f = alpha * sign / dist;
+      // 吸引(同域)取负 / 排斥(异域)取正,1/√dist 衰减(远距离仍有力)
+      const sign = a.category === b.category ? -8 : 18;
+      const f = alpha * sign / Math.sqrt(dist);
       const ux = dx / dist, uy = dy / dist;
       b.vx += ux * f; b.vy += uy * f;
       a.vx -= ux * f; a.vy -= uy * f;
