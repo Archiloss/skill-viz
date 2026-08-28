@@ -7,3 +7,5 @@
 用法(本地 `~/.hermes/scripts/` 同款)：`python3 gen_xxx.py`
 无敏感信息(不读凭证/密钥)；生成后 `git push` 即发布 Pages。
 2026-08-28 建立：原 build_synapse_v2.py 被 cleanup 误删，重写并备份上库，防止再次丢失。
+
+> ⚠️ **权威源在本地** `~/.hermes/scripts/`（运行/修改都在本地）。本 repo `scripts/` 只是**备份快照**——改动请改本地 `~/.hermes/scripts/`，改完再把同步副本推到此处；**不要直接改 repo 这份**，否则会被覆盖。
